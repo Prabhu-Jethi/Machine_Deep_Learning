@@ -3,6 +3,6 @@ __pycache__/
 *.pyc
 .env
 saved/
-FineTuning/
+qwen3-finetuned/
 
 

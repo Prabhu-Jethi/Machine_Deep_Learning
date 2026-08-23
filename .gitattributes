@@ -1,1 +1,1 @@
-Projects/Forecasting/data/household_power_consumption.txt filter=lfs diff=lfs merge=lfs -text
+Projects/Energy_Consumption/data/household_power_consumption.txt filter=lfs diff=lfs merge=lfs -text

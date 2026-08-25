@@ -7,8 +7,6 @@ from sklearn.impute import SimpleImputer
 
 def load_data():
     data_df = pd.read_csv(r"D:\Python\ML\EVERYDAY_ML_DL\Projects\Energy_Consumption\data\hourly_cleaned_power_data.csv", sep=',')
-    data_df.describe
-    data_df.dtypes
     return data_df
 
 data_df = load_data()

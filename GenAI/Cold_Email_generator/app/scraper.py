@@ -5,7 +5,7 @@ load_dotenv(find_dotenv())
 from langchain_community.document_loaders import WebBaseLoader
 
 class Scrape():
-    def scrape_page_content(url):
+    def scrape_page_content(self, url):
         try:
             loader = WebBaseLoader(url)
             page_data = loader.load()

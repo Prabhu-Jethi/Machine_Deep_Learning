@@ -1,0 +1,9 @@
+## Virtual environments (contains dependencies)
+.venv/
+
+
+## Environment variables (contains API Keys)
+.env
+
+
+db/

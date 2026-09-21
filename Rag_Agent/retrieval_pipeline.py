@@ -2,6 +2,7 @@ import os
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from groq import Groq
+from langchain_core.messages import HumanMessage, SystemMessage
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -34,13 +35,14 @@ def retrieval_model(query):
 
 def main():
     # 1. Get the user query
-    query = "What was Microsoft's first hardware product release?"
+    query = "What was the original name of Microsoft before it became Microsoft?"
 
     # 2. Get the context from our RAG database
     print("\nSearching database for relevant context...")
     context = retrieval_model(query)
 
     # 3. Pass the context and the question to Groq!
+    # client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
     client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
     
     response = client.chat.completions.create(
@@ -48,7 +50,7 @@ def main():
         messages=[
             {
                 "role": "user",
-                "content": "What was Microsoft's first hardware product release?"
+                "content": f"{context}"
             }
         ]
     )

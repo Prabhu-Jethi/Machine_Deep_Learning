@@ -1,0 +1,42 @@
+from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTextSplitter
+
+text = """Tesla's Q3 Results
+
+Tesla reported record revenue of $25.2B in Q3 2024.
+
+Model Y Performance
+
+The Model Y became the best-selling vehicle globally, with 350,000 units sold.
+
+Production Challenges
+
+Supply chain issues caused a 12% increase in production costs.
+
+This is one very long paragraph that definitely exceeds our 100 character limit and has no double newlines inside it whatsoever making it impossible to split properly."""
+
+
+# splitter = CharacterTextSplitter(
+#     separator=" ",      ## { "\n\n", " ", ". ", "\n", ""}
+#     chunk_size=100,
+#     chunk_overlap=0
+# )
+
+# chunk1 = splitter.split_text(text)
+# for i, chunk in enumerate(chunk1, 1):
+#     print(f"Chunk{i}: ({len(chunk)}) chars")
+#     print(f"{chunk1}")
+
+
+
+# Example 2: RecursiveCharacterTextSplitter fixes this
+
+recursive_splitter = RecursiveCharacterTextSplitter(
+    separators=["\n\n", "\n", ". ", " ", ""],   ## multiple separators at a given time
+    chunk_size=100,
+    chunk_overlap=0
+)
+
+chunk2 = recursive_splitter.split_text(text)
+for i, chunk in enumerate(chunk2):
+    print(f"Chunk{i}: ({len(chunk)}) chars")
+    print(f"{chunk2}\n")

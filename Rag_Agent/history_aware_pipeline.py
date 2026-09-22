@@ -1,6 +1,6 @@
-import os
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_groq import ChatGroq
 from dotenv import load_dotenv
@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 persistent_directory = "db/chroma_db"
-embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+embedding_model = OllamaEmbeddings(model="qwen3-embedding:8b", dimensions=384)
 db = Chroma(
     persist_directory=persistent_directory,
     embedding_function=embedding_model
@@ -46,7 +46,7 @@ def ask_question(user_question):
     print(f"Found {len(docs)} relevant documents")
     for i, doc in enumerate(docs, 1):
         lines = doc.page_content.split('\n')[:2]
-        preview = '\n'.join(lines)
+        preview = '\n'.join(lines)('\n')
         print(f"Doc {i}: {preview}")
     
     ## 3. Create Prompt 
@@ -91,3 +91,15 @@ def start_chat():
 if __name__ == "__main__":
     start_chat()
 
+
+
+# Synthetic Questions: 
+
+# 1. "What was NVIDIA's first graphics accelerator called?"
+# 2. "Which company did NVIDIA acquire to enter the mobile processor market?"
+# 3. "What was Microsoft's first hardware product release?"
+# 4. "How much did Microsoft pay to acquire GitHub?"
+# 5. "In what year did Tesla begin production of the Roadster?"
+# 6. "Who succeeded Ze'ev Drori as CEO in October 2008?"
+# 7. "What was the name of the autonomous spaceport drone ship that achieved the first successful sea landing?"
+# 8. "What was the original name of Microsoft before it became Microsoft?"

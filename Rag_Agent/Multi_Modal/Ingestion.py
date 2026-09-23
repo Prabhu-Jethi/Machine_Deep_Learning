@@ -10,6 +10,7 @@ from unstructured.chunking.title import chunk_by_title
 
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
@@ -215,8 +216,43 @@ def summarized_chunks(chunks):
         
         langchain_documents.append(doc)
     
-    print(f"Processed {len(langchain_documents)} chunks")
+    print(f"\nProcessed {len(langchain_documents)} chunks")
     return langchain_documents
+
+### For readability of langchain documents
+def export_chunks_to_json(chunks, filename="chunks_export.json"):
+    '''Export processed chunks to json'''
+    export_data = []
+    for i, doc in enumerate(chunks):
+        chunk_data = {
+            "chunk_id": i + 1,
+            "enhanced_content": doc.page_content,
+            "metadata": {
+                "original_content": json.loads(doc.metadata.get("original_content", "{}"))
+            }
+        }
+        export_data.append(chunk_data)
+    ## save it to
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump(export_data, f, indent=2, ensure_ascii=False)
+    print(f"\nExported {len(export_data)} chunks to {filename}")
+    return export_data
+
+
+def vector_store(documents, persist_directory="dbv1/chroma_db"):
+    ## Create and persist chromadb vector store
+    print("\nCreating embeddings and storing it to chroma db")
+
+    embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    vector_store = Chroma.from_documents(
+        documents=documents,
+        persist_directory=persist_directory,
+        embedding=embedding_model,
+        collection_metadata={"hnsw:space": "cosine"}
+    )
+    print(f"Vector Store created & saved to {persist_directory}")
+
+    return vector_store
 
 
 
@@ -228,10 +264,18 @@ def main():
     chunks = create_chunks_by_title(elements=elements)
     
     # 3. Summarize chunks and convert to LangChain Documents
-    langchain_documents = summarized_chunks(chunks=chunks)
+    processed_chunks = summarized_chunks(chunks=chunks)
     
     # 4. Ready for Vector DB
-    print(f"\nSuccessfully generated {len(langchain_documents)} LangChain Documents ready for ChromaDB!")
+    print(f"\nSuccessfully generated {len(processed_chunks)} LangChain Documents ready for ChromaDB!")
+
+    # 5. Saved chunks in a JSON file
+    export_chunks_to_json(chunks=processed_chunks, filename="chunks_export.json")
+
+    #6. Vector store and embedding created
+    vector = vector_store(documents=processed_chunks, persist_directory="dbv1/chroma_db")
+    print(f"Vector Embeddings created and Stored at {vector}")
+
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,6 @@
 import json
-import pytesseract
 from typing import List
-
+import os
 ## Unstructured for document parsing
 import unstructured_pytesseract
 unstructured_pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -10,8 +9,8 @@ from unstructured.partition.pdf import partition_pdf
 from unstructured.chunking.title import chunk_by_title
 
 from langchain_chroma import Chroma
-from langchain_ollama import OllamaEmbeddings
-from langchain_groq import ChatGroq
+from langchain_core.documents import Document
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 
@@ -119,8 +118,7 @@ def separate_chunk_types(chunk):
 def enhanced_summary(text: str, tables: List[str], images: List[str]) -> str:
     """Create AI-enhanced summary for mixed content"""
     try:
-        # We MUST use a Vision model to process image_urls!
-        llm = ChatGroq(model="llama-3.2-11b-vision-preview")
+        llm = ChatOpenAI(model="gpt-5.6-luna", base_url="https://api.experientiallabs.ai/v1", api_key=os.environ["EXPLABS_API_KEY"])
 
         prompt_text = f"""You are reating a searchable description for document content retrieval.
         CONTENT TO ANALYZE:
@@ -185,7 +183,42 @@ def summarized_chunks(chunks):
         content_data = separate_chunk_types(chunk)
         print(f"Type found: {content_data['types']}")
         print(f"Table_type found: {len(content_data['tables'])}, Image_type found: {len(content_data['images'])}")
+        # Create AI-enhanced summary if chunk has tables/images
+        if content_data['tables'] or content_data['images']:
+            print(f"\nCreating AI summary for mixed content...")
+            try:
+                enhanced_content = enhanced_summary(
+                    content_data['text'],
+                    content_data['tables'], 
+                    content_data['images']
+                )
+                print(f"\nAI summary created successfully")
+                print(f"\nEnhanced content preview: {enhanced_content[:200]}...")
+            except Exception as e:
+                print(f"\nAI summary failed: {e}")
+                enhanced_content = content_data['text']
+        else:
+            print(f"\nUsing raw text (no tables/images)")
+            enhanced_content = content_data['text']
+
+        # Create LangChain Document with rich metadata
+        doc = Document(
+            page_content=enhanced_content,
+            metadata={
+                "original_content": json.dumps({
+                    "raw_text": content_data['text'],
+                    "tables_html": content_data['tables'],
+                    "images_base64": content_data['images']
+                })
+            }
+        )
         
+        langchain_documents.append(doc)
+    
+    print(f"Processed {len(langchain_documents)} chunks")
+    return langchain_documents
+
+
 
 def main():
     # 1. Get elements from partition_document
@@ -194,28 +227,11 @@ def main():
     # 2. Get chunks from create_chunks_by_title
     chunks = create_chunks_by_title(elements=elements)
     
-    # 3. separate_chunk_types 
-    processed_chunks = []
-    for chunk in chunks:
-        content_data = separate_chunk_types(chunk=chunk)
-        processed_chunks.append(content_data)
-    print(f"\nSuccessfully processed {len(processed_chunks)} chunks!")
-
-    # 4. Ai enhanced summary (using llm)
-    print("\nGenerating AI enhanced summaries for each chunk...")
-    summarized_docs = []
-    for idx, data in enumerate(processed_chunks):
-        print(f"Summarizing chunk {idx + 1}/{len(processed_chunks)}...")
-        summary = enhanced_summary(
-            text=data.get('text', ''),
-            tables=data.get('tables', []),
-            images=data.get('images', [])
-        )
-        # Store the summary along with the original raw data
-        data['summary'] = summary
-        summarized_docs.append(data)
-        
-    print("\nAll chunks summarized successfully!")
+    # 3. Summarize chunks and convert to LangChain Documents
+    langchain_documents = summarized_chunks(chunks=chunks)
+    
+    # 4. Ready for Vector DB
+    print(f"\nSuccessfully generated {len(langchain_documents)} LangChain Documents ready for ChromaDB!")
 
 if __name__ == "__main__":
     main()

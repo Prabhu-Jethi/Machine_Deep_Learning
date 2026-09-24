@@ -10,36 +10,38 @@ load_dotenv()
 
 file_path = "../docs/attention-is-all-you-need.pdf"
 
-def complete_ingestion_pipeline(file_path: str) -> str:
-    ## Run the complete RAG Ingestion pipeline
-    print(f"Starting Rag ingestion pipeline")
+## Summarized chunks
+summarized = summarized_chunks(chunks=create_chunks_by_title)
+def re_initialize_vector_db(documents, persist_directory="dbv2/chroma_db"):
+    ## Embedding and vector store
+    embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    vector_db = Chroma.from_documents(
+        documents=documents,
+        persist_directory=persist_directory,
+        embedding=embedding_model,
+        collection_metadata={"hnsw:space", "cosine"}
+    )
 
-    '''1. Partition document elements'''
-    elements = partition_document(file_path)
-    '''2. Chunk creation'''
-    chunks = create_chunks_by_title(elements)
-    '''3. Summarize chunks '''
-    processed = summarized_chunks(chunks)
-    '''4. vector store'''
-    db = vector_store(processed, persist_directory="dbv2/chroma_db")
-    print(f"Ingestion pipeline completed")
+    return vector_db
 
-    return db
-
-db = complete_ingestion_pipeline(file_path)
-
+vector_db = re_initialize_vector_db(documents=)
 ## Query the vector store
 query = "What are the two main components of the Transformer architecture?"
 
 # Retrieve from vector store    
-retriever = db.as_retriever(search_kwargs={'k': 3})
+retriever = vector_db.as_retriever(search_kwargs={'k': 3})
 
-chunks = retriever.invoke()
+chunks = retriever.invoke(query)
 export_chunks_to_json(chunks, "rag_results.json")
 
 def generation_of_answer(chunks, query):
     '''Generate final answer using multi-modal content'''
-    try
+    try:
+        llm = OpenAI(model="gpt-5.6-luna", base_url="https://api.experientiallabs.ai/v1", api_key=os.environ["EXPLABS_API_KEY"])
+        prompt_text = f"""Based on the following documents, please answer this question: {query}
+
+CONTENT TO ANALYZE:
+"""     
 
     
 

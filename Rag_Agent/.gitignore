@@ -1,10 +1,9 @@
 ## Virtual environments (contains dependencies)
 .venv/
 
-
 ## Environment variables (contains API Keys)
 .env
 
-
 db/
 Multi_Modal/dbv1/
+__pycache__/

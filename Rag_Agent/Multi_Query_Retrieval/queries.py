@@ -18,9 +18,11 @@ llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
 loader = TextLoader(text, encoding="utf-8")
 documents = loader.load()
 
+splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=0)
+chunks = splitter.split_documents(documents)
 
 db = Chroma.from_documents(
-    documents=documents,
+    documents=chunks,
     embedding=embedding_model,
     persist_directory=persistent_directory,
     collection_metadata={"hnsw:space": "cosine"}
@@ -42,7 +44,8 @@ llm_with_tools = llm.with_structured_output(QueryValidations)
 
 prompt = f"""Generate 3 different variations of this query that would help retrieve relevant documents:
 Original query: {org_query}
-Return 3 alternative queries that rephrase or approach the same question from different angles."""
+Return 3 alternative queries that rephrase or approach the same question from different angles.
+You MUST use the provided tool to output the response. Do not output any conversational text."""
 
 response = llm_with_tools.invoke(prompt)
 query_variations = response.queries
@@ -68,6 +71,3 @@ for i, query in enumerate(query_variations, 1):
     for j, doc in enumerate(docs, 1):
         print(f"Document {j}:")
         print(f"{doc.page_content[:150]}...\n")
-        
-    print("\n" + "="*50)
-print("\n" + "="*60)
